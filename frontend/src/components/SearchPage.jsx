@@ -1,5 +1,5 @@
 import { ArrowUp, BookOpen, Loader2, Mic, Search, Video } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BookResultCard from "./BookResultCard.jsx";
 import MotivationRail from "./MotivationRail.jsx";
 import RelatedQuestions from "./RelatedQuestions.jsx";
@@ -73,12 +73,33 @@ export default function SearchPage({ sessions, onSearch, onFilterChange }) {
     onSearch(query);
   };
 
-  const content = useMemo(() => {
-    if (!hasSessions) {
-      return <SearchGreeting onSearch={onSearch} />;
-    }
+  const searchForm = (
+    <form className={`searchComposer ${hasSessions ? "floating" : "inline"}`} onSubmit={handleSubmit}>
+      <button
+        type="button"
+        className={`composerIcon ${listening ? "recording" : ""}`}
+        onClick={start}
+        aria-label="Voice search"
+        title="Voice search"
+      >
+        <Mic size={20} />
+      </button>
+      <input
+        ref={inputRef}
+        value={inputValue}
+        onChange={(event) => setInputValue(event.target.value)}
+        placeholder="Ask about discipline, training, recovery, fat loss..."
+      />
+      <button className="submitButton" type="submit" aria-label="Search">
+        <ArrowUp size={20} />
+      </button>
+    </form>
+  );
 
-    return sessions.map((session) => {
+  const content = !hasSessions ? (
+    <SearchGreeting onSearch={onSearch}>{searchForm}</SearchGreeting>
+  ) : (
+    sessions.map((session) => {
       const visibleResults = filterResults(session.results || [], session.selectedFilter).slice(0, 5);
       return (
         <section className="searchSession" key={session.id}>
@@ -125,8 +146,8 @@ export default function SearchPage({ sessions, onSearch, onFilterChange }) {
           )}
         </section>
       );
-    });
-  }, [hasSessions, onFilterChange, onSearch, sessions]);
+    })
+  );
 
   return (
     <div className="searchPage">
@@ -144,26 +165,7 @@ export default function SearchPage({ sessions, onSearch, onFilterChange }) {
           <div ref={bottomRef} />
         </div>
 
-        <form className="searchComposer" onSubmit={handleSubmit}>
-          <button
-            type="button"
-            className={`composerIcon ${listening ? "recording" : ""}`}
-            onClick={start}
-            aria-label="Voice search"
-            title="Voice search"
-          >
-            <Mic size={20} />
-          </button>
-          <input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(event) => setInputValue(event.target.value)}
-            placeholder="Ask about discipline, training, recovery, fat loss..."
-          />
-          <button className="submitButton" type="submit" aria-label="Search">
-            <ArrowUp size={20} />
-          </button>
-        </form>
+        {hasSessions && searchForm}
       </main>
 
       <MotivationRail onSearch={onSearch} />

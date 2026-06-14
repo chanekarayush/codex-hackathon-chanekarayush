@@ -2,18 +2,19 @@
   color-scheme: light;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --bg: #f6f7f4;
+  --bg: #f5f6f4;
   --panel: #ffffff;
-  --panel-strong: #f0f5f2;
-  --ink: #18201c;
-  --muted: #617067;
-  --line: #dbe3dd;
-  --green: #16784e;
-  --green-dark: #0c5137;
-  --coral: #c84f31;
-  --gold: #a36a00;
-  --blue: #2f5e92;
-  --shadow: 0 18px 50px rgba(24, 32, 28, 0.11);
+  --panel-muted: #fafbf9;
+  --ink: #111713;
+  --ink-soft: #2d3831;
+  --muted: #66736b;
+  --line: #d9ded9;
+  --line-strong: #c8cfc9;
+  --accent: #0f6b48;
+  --accent-dark: #08452f;
+  --alert: #c84f31;
+  --link: #245b8f;
+  --shadow: 0 18px 38px rgba(17, 23, 19, 0.1);
 }
 
 * {
@@ -23,9 +24,7 @@
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    linear-gradient(180deg, rgba(22, 120, 78, 0.08), rgba(246, 247, 244, 0) 36rem),
-    var(--bg);
+  background: var(--bg);
   color: var(--ink);
 }
 
@@ -39,18 +38,42 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
 .appShell {
   min-height: 100vh;
 }
 
 .searchPage {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 21rem;
-  gap: 1.25rem;
-  width: min(1220px, calc(100vw - 2rem));
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  width: min(960px, calc(100vw - 2rem));
   min-height: 100vh;
   margin: 0 auto;
-  padding: 1rem 0 7.5rem;
+  padding: 0.75rem 0 6.25rem;
+}
+
+.searchPage:has(.motivationRail) {
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  width: min(1240px, calc(100vw - 2rem));
+}
+
+.searchPage:has(.motivationRail.railCollapsed) {
+  grid-template-columns: minmax(0, 1fr) 4.25rem;
+  width: min(1040px, calc(100vw - 2rem));
 }
 
 .threadPanel {
@@ -66,80 +89,88 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 0 0.75rem;
-  background: linear-gradient(180deg, var(--bg) 72%, rgba(246, 247, 244, 0));
+  min-height: 4.25rem;
+  padding: 0.7rem 0 0.72rem;
+  border-bottom: 1px solid rgba(217, 222, 217, 0.72);
+  background: rgba(245, 246, 244, 0.92);
+  backdrop-filter: blur(14px);
 }
 
-.eyebrow {
+.eyebrow,
+.sectionLabel {
   display: block;
-  margin-bottom: 0.2rem;
-  color: var(--green);
-  font-size: 0.78rem;
+  color: var(--accent);
+  font-size: 0.72rem;
   font-weight: 800;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
-h1,
-h2,
-h3,
-p {
-  margin: 0;
+.eyebrow {
+  margin-bottom: 0.35rem;
 }
 
 h1 {
-  font-size: clamp(1.7rem, 4vw, 2.35rem);
-  line-height: 1.03;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 760;
+  line-height: 1.08;
 }
 
 .threadStream {
   display: flex;
   flex-direction: column;
-  gap: 1.15rem;
-  padding: 0.75rem 0 1rem;
+  gap: 1rem;
+  padding: 0.95rem 0 1rem;
 }
 
 .greeting {
   display: grid;
-  align-content: center;
-  min-height: 58vh;
-  gap: 1.5rem;
+  align-content: start;
+  gap: 1rem;
+  min-height: 0;
+  padding: 1.1rem 0 0.75rem;
 }
 
-.greetingText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-height: 5.8rem;
-  font-size: clamp(2rem, 6vw, 4.8rem);
-  font-weight: 850;
-  line-height: 1;
+.greetingCopy {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 48rem;
 }
 
-.cursor {
-  width: 0.62rem;
-  height: 2.25rem;
-  background: var(--coral);
-  animation: blink 1s step-end infinite;
+.greetingCopy h2 {
+  max-width: 18ch;
+  color: var(--ink);
+  font-size: clamp(2.25rem, 5vw, 3.85rem);
+  font-weight: 820;
+  line-height: 1.02;
 }
 
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
+.greetingCopy p {
+  max-width: 38rem;
+  color: var(--muted);
+  font-size: clamp(1rem, 2vw, 1.16rem);
+  line-height: 1.55;
+}
+
+.suggestionBlock {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 48rem;
 }
 
 .searchSession {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.9rem;
 }
 
 .userBubble {
   align-self: flex-end;
-  max-width: min(42rem, 85%);
-  padding: 0.85rem 1rem;
-  border-radius: 1rem 1rem 0.25rem 1rem;
-  background: var(--green-dark);
+  max-width: min(42rem, 86%);
+  padding: 0.82rem 0.95rem;
+  border-radius: 8px 8px 2px 8px;
+  background: var(--accent-dark);
   color: #fff;
   line-height: 1.45;
 }
@@ -148,48 +179,48 @@ h1 {
 .errorBox,
 .answerBlock {
   align-self: flex-start;
-  width: min(100%, 49rem);
+  width: min(100%, 52rem);
 }
 
 .loadingRow {
   display: flex;
   align-items: center;
-  min-height: 4.5rem;
-  color: var(--green);
+  min-height: 4rem;
+  color: var(--accent);
 }
 
 .errorBox {
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(200, 79, 49, 0.3);
-  border-radius: 0.5rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(200, 79, 49, 0.34);
+  border-radius: 8px;
   background: rgba(200, 79, 49, 0.08);
-  color: #8a2f1d;
+  color: #88321f;
 }
 
 .answerBlock {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.85rem;
 }
 
 .filterBar {
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
-  padding: 0.22rem;
+  padding: 0.18rem;
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  background: var(--panel);
 }
 
 .filterBar button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  min-height: 2.1rem;
+  gap: 0.4rem;
+  min-height: 2.15rem;
   padding: 0 0.75rem;
   border: 0;
-  border-radius: 0.35rem;
+  border-radius: 6px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -202,30 +233,33 @@ h1 {
 
 .resultsList {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 
 .resultCard {
   display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
-  gap: 0.95rem;
-  padding: 0.85rem;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.8rem;
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border-radius: 8px;
   background: var(--panel);
-  box-shadow: 0 10px 28px rgba(24, 32, 28, 0.07);
+}
+
+.resultCard:hover {
+  border-color: var(--line-strong);
 }
 
 .thumbButton,
 .bookCover {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  min-height: 7.5rem;
+  aspect-ratio: 16 / 9;
+  min-height: 6.8rem;
   overflow: hidden;
   border: 0;
-  border-radius: 0.45rem;
-  background: #1b2520;
+  border-radius: 6px;
+  background: #17211d;
   color: #fff;
 }
 
@@ -236,19 +270,17 @@ h1 {
 
 .thumbButton img,
 .bookCover img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .thumbnailFallback,
 .bookCover {
   display: grid;
   place-items: center;
-  background:
-    linear-gradient(135deg, rgba(22, 120, 78, 0.9), rgba(47, 94, 146, 0.85)),
-    #20352c;
+  background: #17211d;
 }
 
 .playOverlay {
@@ -257,15 +289,15 @@ h1 {
   display: grid;
   place-items: center;
   color: white;
-  background: rgba(0, 0, 0, 0.14);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .playOverlay svg {
-  width: 3.1rem;
-  height: 3.1rem;
-  padding: 0.82rem;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0.72rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.58);
 }
 
 .timeBadge,
@@ -273,12 +305,12 @@ h1 {
   position: absolute;
   right: 0.45rem;
   bottom: 0.45rem;
-  padding: 0.28rem 0.45rem;
-  border-radius: 0.3rem;
-  background: rgba(0, 0, 0, 0.76);
+  padding: 0.24rem 0.42rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.78);
   color: #fff;
-  font-size: 0.78rem;
-  font-weight: 750;
+  font-size: 0.76rem;
+  font-weight: 760;
 }
 
 .pageBadge {
@@ -303,12 +335,13 @@ h1 {
 .scoreBadge {
   display: inline-flex;
   align-items: center;
-  min-height: 1.7rem;
+  min-height: 1.65rem;
   padding: 0 0.52rem;
-  border-radius: 0.35rem;
-  background: rgba(22, 120, 78, 0.1);
-  color: var(--green-dark);
-  font-size: 0.78rem;
+  border: 1px solid rgba(15, 107, 72, 0.18);
+  border-radius: 5px;
+  background: rgba(15, 107, 72, 0.07);
+  color: var(--accent-dark);
+  font-size: 0.76rem;
   font-weight: 800;
 }
 
@@ -325,7 +358,7 @@ h1 {
   width: 2.35rem;
   height: 2.35rem;
   border: 1px solid var(--line);
-  border-radius: 0.45rem;
+  border-radius: 6px;
   background: #fff;
   color: var(--ink);
   cursor: pointer;
@@ -334,12 +367,16 @@ h1 {
 
 .iconButton:hover,
 .composerIcon:hover {
-  border-color: rgba(22, 120, 78, 0.4);
+  border-color: rgba(15, 107, 72, 0.42);
+  color: var(--accent-dark);
 }
 
 .resultContent h3 {
-  font-size: 1.03rem;
-  line-height: 1.25;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1.3;
 }
 
 .mutedLine {
@@ -350,9 +387,9 @@ h1 {
 .resultText {
   display: -webkit-box;
   overflow: hidden;
-  color: #34443b;
-  font-size: 0.96rem;
-  line-height: 1.58;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  line-height: 1.6;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
 }
@@ -367,10 +404,11 @@ h1 {
   align-items: center;
   gap: 0.3rem;
   width: fit-content;
+  padding: 0;
   border: 0;
   background: transparent;
-  color: var(--blue);
-  font-weight: 750;
+  color: var(--link);
+  font-weight: 760;
   cursor: pointer;
 }
 
@@ -386,35 +424,45 @@ h1 {
   padding: 0 0.78rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #fff;
-  color: #2f3e35;
+  background: var(--panel);
+  color: var(--ink-soft);
   cursor: pointer;
+  overflow-wrap: anywhere;
 }
 
 .questionPill:hover {
-  border-color: rgba(22, 120, 78, 0.45);
-  color: var(--green-dark);
+  border-color: rgba(15, 107, 72, 0.46);
+  color: var(--accent-dark);
 }
 
-.emptyResults,
-.railEmpty {
+.emptyResults {
   color: var(--muted);
 }
 
 .searchComposer {
-  position: fixed;
-  left: 50%;
-  bottom: 1rem;
   z-index: 20;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.55rem;
-  width: min(780px, calc(100vw - 2rem));
+  width: 100%;
+  max-width: 49rem;
   padding: 0.55rem;
-  border: 1px solid rgba(24, 32, 28, 0.12);
-  border-radius: 0.65rem;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.searchComposer.inline {
+  margin: 0.2rem 0 0.1rem;
+  box-shadow: 0 10px 26px rgba(17, 23, 19, 0.06);
+}
+
+.searchComposer.floating {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  width: min(780px, calc(100vw - 2rem));
   box-shadow: var(--shadow);
   transform: translateX(-50%);
   backdrop-filter: blur(16px);
@@ -422,7 +470,7 @@ h1 {
 
 .searchComposer input {
   min-width: 0;
-  height: 2.9rem;
+  height: 2.85rem;
   border: 0;
   outline: 0;
   background: transparent;
@@ -430,18 +478,22 @@ h1 {
 }
 
 .searchComposer input::placeholder {
-  color: #7a8780;
+  color: #7a847d;
 }
 
 .submitButton {
-  border-color: var(--green-dark);
-  background: var(--green-dark);
+  border-color: var(--accent-dark);
+  background: var(--accent-dark);
   color: #fff;
 }
 
+.submitButton:hover {
+  background: var(--accent);
+}
+
 .composerIcon.recording {
-  border-color: var(--coral);
-  color: var(--coral);
+  border-color: var(--alert);
+  color: var(--alert);
 }
 
 .motivationRail {
@@ -449,44 +501,157 @@ h1 {
   top: 1rem;
   align-self: start;
   display: grid;
-  gap: 1rem;
+  align-content: start;
+  gap: 0.85rem;
   max-height: calc(100vh - 2rem);
   overflow: auto;
-  padding: 0.85rem;
+  padding: 0.75rem;
   border: 1px solid var(--line);
-  border-radius: 0.55rem;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 10px 30px rgba(24, 32, 28, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.motivationRail.railCollapsed {
+  justify-items: center;
+  overflow: visible;
+  padding: 0.55rem;
+}
+
+.railTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.railTitleBlock {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.railKicker {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 820;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.railTitleBlock strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 820;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.railToggle,
+.railMiniStat {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.railToggle {
+  flex: 0 0 auto;
+  width: 2.15rem;
+  height: 2.15rem;
+}
+
+.railToggle:hover,
+.railMiniStat:hover {
+  border-color: rgba(15, 107, 72, 0.42);
+  color: var(--accent-dark);
+}
+
+.railCollapsed .railTitleBlock {
+  display: none;
+}
+
+.railContent,
+.railCollapsedBody {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.railCollapsedBody {
+  justify-items: center;
+  gap: 0.45rem;
+}
+
+.railMiniStat {
+  width: 2.55rem;
+  min-height: 2.7rem;
+  gap: 0.15rem;
+  padding: 0.35rem 0;
+  font-size: 0.75rem;
+  font-weight: 820;
 }
 
 .railSection {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.6rem;
 }
 
 .railHeading {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.45rem;
-  color: var(--green-dark);
+  color: var(--accent-dark);
+}
+
+.railHeading span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 .railHeading h2 {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 820;
+}
+
+.railHeading strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.45rem;
+  height: 1.45rem;
+  border: 1px solid rgba(15, 107, 72, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 107, 72, 0.07);
+  color: var(--accent-dark);
+  font-size: 0.75rem;
+  font-weight: 820;
 }
 
 .experienceItem,
 .libraryItem {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.42rem;
   width: 100%;
   padding: 0.72rem;
   border: 1px solid var(--line);
-  border-radius: 0.45rem;
+  border-radius: 6px;
   background: var(--panel);
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+}
+
+.experienceItem:hover,
+.libraryItem:hover {
+  border-color: var(--line-strong);
 }
 
 .experienceItem span,
@@ -497,6 +662,18 @@ h1 {
   white-space: nowrap;
 }
 
+.experienceItem .railItemTitle,
+.libraryItem .railItemTitle {
+  display: -webkit-box;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .experienceItem small,
 .libraryItem small {
   display: flex;
@@ -504,13 +681,8 @@ h1 {
   gap: 0.25rem;
   min-height: 1rem;
   color: var(--muted);
-}
-
-.railLoading {
-  display: grid;
-  place-items: center;
-  min-height: 5rem;
-  color: var(--green);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .playerDock {
@@ -526,8 +698,8 @@ h1 {
 
 .miniPlayer,
 .queueDock {
-  border: 1px solid rgba(24, 32, 28, 0.14);
-  border-radius: 0.55rem;
+  border: 1px solid rgba(17, 23, 19, 0.14);
+  border-radius: 8px;
   background: #fff;
   box-shadow: var(--shadow);
   pointer-events: auto;
@@ -544,7 +716,7 @@ h1 {
 .miniPlayerTop span {
   overflow: hidden;
   font-size: 0.85rem;
-  font-weight: 750;
+  font-weight: 760;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -554,7 +726,7 @@ h1 {
   width: 100%;
   aspect-ratio: 16 / 9;
   border: 0;
-  border-radius: 0 0 0.55rem 0.55rem;
+  border-radius: 0 0 8px 8px;
 }
 
 .queueDock {
@@ -574,9 +746,9 @@ h1 {
 .queueTitle {
   grid-template-columns: auto auto;
   justify-content: start;
-  color: var(--green-dark);
+  color: var(--accent-dark);
   font-size: 0.85rem;
-  font-weight: 800;
+  font-weight: 820;
 }
 
 .queueItem button {
@@ -585,7 +757,7 @@ h1 {
   width: 1.65rem;
   height: 1.65rem;
   border: 1px solid var(--line);
-  border-radius: 0.32rem;
+  border-radius: 5px;
   background: #fff;
   cursor: pointer;
 }
@@ -601,25 +773,56 @@ h1 {
 }
 
 @media (max-width: 980px) {
-  .searchPage {
+  .searchPage,
+  .searchPage:has(.motivationRail) {
     grid-template-columns: 1fr;
+    width: min(920px, calc(100vw - 2rem));
   }
 
   .motivationRail {
     position: static;
-    grid-row: 1;
+    grid-row: 2;
     max-height: none;
   }
 
-  .threadPanel {
-    grid-row: 2;
+  .motivationRail.railCollapsed {
+    justify-items: stretch;
+    overflow: hidden;
+    padding: 0.55rem;
+  }
+
+  .motivationRail.railCollapsed .railTop {
+    width: 100%;
+  }
+
+  .railCollapsed .railTitleBlock {
+    display: grid;
+  }
+
+  .railCollapsed .railCollapsedBody {
+    display: none;
   }
 }
 
 @media (max-width: 680px) {
-  .searchPage {
-    width: min(100vw - 1rem, 1220px);
+  .searchPage,
+  .searchPage:has(.motivationRail) {
+    width: min(100vw - 1rem, 920px);
     padding-bottom: 7rem;
+  }
+
+  .topBar {
+    min-height: 4.35rem;
+  }
+
+  .greeting {
+    min-height: auto;
+    padding: 1.35rem 0 0.4rem;
+  }
+
+  .greetingCopy h2 {
+    max-width: 12ch;
+    font-size: clamp(2.1rem, 12vw, 3.5rem);
   }
 
   .resultCard {
@@ -628,7 +831,7 @@ h1 {
 
   .thumbButton,
   .bookCover {
-    min-height: 11rem;
+    min-height: 10.5rem;
   }
 
   .filterBar {
@@ -640,8 +843,16 @@ h1 {
     padding: 0 0.45rem;
   }
 
-  .greeting {
-    min-height: 42vh;
+  .searchComposer {
+    padding: 0.45rem;
+  }
+
+  .searchComposer.floating {
+    width: calc(100vw - 1rem);
+  }
+
+  .searchComposer input {
+    height: 2.7rem;
   }
 
   .playerDock {

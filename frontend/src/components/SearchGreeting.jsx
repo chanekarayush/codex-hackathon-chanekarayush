@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
 import RelatedQuestions from "./RelatedQuestions.jsx";
 
 const SUGGESTIONS = [
@@ -9,44 +8,19 @@ const SUGGESTIONS = [
   "How should I recover after a bad week?",
 ];
 
-export default function SearchGreeting({ onSearch }) {
-  const lines = useMemo(
-    () => ["Train the question.", "Find the exact moment that answers it."],
-    [],
-  );
-  const [lineIndex, setLineIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
-
-  useEffect(() => {
-    if (lineIndex >= lines.length) {
-      return undefined;
-    }
-    const currentLine = lines[lineIndex];
-    if (charIndex < currentLine.length) {
-      const timer = window.setTimeout(() => setCharIndex((value) => value + 1), 28);
-      return () => window.clearTimeout(timer);
-    }
-    const timer = window.setTimeout(() => {
-      setLineIndex((value) => value + 1);
-      setCharIndex(0);
-    }, 420);
-    return () => window.clearTimeout(timer);
-  }, [charIndex, lineIndex, lines]);
-
-  const visibleLines = lines.slice(0, lineIndex);
-  if (lineIndex < lines.length) {
-    visibleLines.push(lines[lineIndex].slice(0, charIndex));
-  }
-
+export default function SearchGreeting({ children, onSearch }) {
   return (
     <section className="greeting" aria-label="Search start">
-      <div className="greetingText">
-        {visibleLines.map((line, index) => (
-          <span key={`${line}-${index}`}>{line}</span>
-        ))}
-        <span className="cursor" aria-hidden="true" />
+      <div className="greetingCopy">
+        <span className="sectionLabel">Ask with intent</span>
+        <h2>Find the exact training moment that answers the question.</h2>
+        <p>Discipline, training, recovery, fat loss, and the hard weeks in between.</p>
       </div>
-      <RelatedQuestions questions={SUGGESTIONS} onSelect={onSearch} />
+      {children}
+      <div className="suggestionBlock">
+        <span className="sectionLabel">Common questions</span>
+        <RelatedQuestions questions={SUGGESTIONS} onSelect={onSearch} />
+      </div>
     </section>
   );
 }

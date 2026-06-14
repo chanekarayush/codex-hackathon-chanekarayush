@@ -1,6 +1,7 @@
 __pycache__/
 *.py[cod]
 .env
+env/
 .DS_Store
 .aws-sam/
 cloud-backend/.aws-sam/

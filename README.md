@@ -2,20 +2,24 @@
 
 ## Summary
 
-Maven is a multimodal search data pipeline for processing YouTube videos and PDF books into semantically searchable records. The pipeline extracts raw content, enriches it with structured LLM metadata, and chunks it for indexing into a vector database such as Qdrant and a NoSQL store such as DynamoDB.
+Maven is a multimodal search data pipeline for processing YouTube videos and PDF books into semantically searchable records. The pipeline extracts raw content, enriches it with structured LLM metadata, identifies key lessons from transcripts, and chunks it for indexing into a vector database such as Qdrant and a NoSQL store such as DynamoDB.
 
-The implementation must preserve exact source anchors. For videos, the critical requirement is zero-drift timestamp mapping: every LLM-extracted story, musical segment, and semantic chunk must resolve back to the correct source timestamp using transcript character offsets and interpolation.
+The implementation must preserve exact source anchors. For videos, the critical requirement is zero-drift timestamp mapping: every LLM-extracted story, key lesson, musical segment, and semantic chunk must resolve back to the correct source timestamp using transcript character offsets and interpolation.
 
 ## Target Architecture
 
 ```text
 data_pipeline/
   common/
+    __init__.py
+    artifacts.py
+    dynamo.py
     json_utils.py
-    retry.py
     llm_client.py
-    text_splitter.py
     logging_config.py
+    retry.py
+    text_mapping.py
+    text_splitter.py
   videos/
     main.py
     transcript_manager.py
@@ -32,8 +36,11 @@ data_pipeline/
     input_books/
     books_output/
     books_enriched_metadata/
-    books_processed_chunks/
+    processed_books_chunks/
 ```
+
+See `docs/ARCHITECTURE.md` for the implemented source layout, artifact flow,
+and ownership boundaries.
 
 Each domain has three phases:
 
@@ -155,7 +162,7 @@ Processing:
 5. Send the full transcript to the LLM with a strict zero-shot system prompt in Marathi or the target language.
 6. Request a JSON-only response using the OpenAI API response format.
 7. Parse the response with the shared brace-counting JSON parser.
-8. Resolve timestamps for stories and musical segments from exact transcript text.
+8. Resolve timestamps for stories, key lessons, and musical segments from exact transcript text.
 
 Target metadata:
 
@@ -195,6 +202,26 @@ Write to:
 data_pipeline/videos/enriched_metadata/<video_id>_meta.json
 ```
 
+### Key Lesson Extraction
+
+The video enrichment phase must identify key lessons from each transcript.
+
+A key lesson is a reusable insight that is explicitly supported by the transcript. It can be a principle, warning, mindset shift, framework, mistake to avoid, or concrete takeaway. For financial videos, examples include lessons about saving, investing, debt, income, money mindset, health, relationships, and financial freedom.
+
+Each key lesson should include a short title, the core lesson, why it matters, an optional action step, a category, an intended audience level, confidence, and exact transcript anchor text for the beginning and end of the supporting segment.
+
+Extraction rules:
+
+1. Only extract lessons that are clearly supported by the transcript.
+2. Do not invent generic advice that is not present in the video.
+3. Prefer lessons that can be reused as snippets, short-form clips, quiz questions, coaching responses, or search results.
+4. Keep lessons non-duplicative within the same video.
+5. Each lesson must include exact start and end transcript text so timestamps can be resolved without drift.
+6. If a lesson is actionable, include one concrete action step.
+7. If timestamp resolution fails, the implementation may keep the lesson only when transcript support is strong, leave the unresolved times empty, and log the failure with the video ID and lesson title.
+
+`actionable_practices` remains reserved for direct "do this" instructions. `key_lessons` captures broader takeaways, including mindset, principles, frameworks, and mistakes to avoid.
+
 ### Zero-Drift Timestamp Resolution
 
 When concatenating transcript fragments, build a character map:
@@ -224,7 +251,7 @@ resolved_time = fragment.start_time + (
 )
 ```
 
-The same resolver must be used for LLM-extracted stories, musical segments, and semantic chunks.
+The same resolver must be used for LLM-extracted stories, key lessons, musical segments, and semantic chunks.
 
 ### Phase 3: Transcript Semantic Chunking
 
@@ -379,7 +406,7 @@ data_pipeline/books/book_chunk_processor.py
 Processing:
 
 1. Load `books_output/<book_name>.json`.
-2. Check for `books_processed_chunks/<book_name>_chunks.json`.
+2. Check for `processed_books_chunks/<book_name>_chunks.json`.
 3. Concatenate pages into one full text string.
 4. Build a `char_to_page_map` while concatenating.
 5. Use LangChain `RecursiveCharacterTextSplitter` with:
@@ -412,7 +439,7 @@ Output:
 Write to:
 
 ```text
-data_pipeline/books/books_processed_chunks/<book_name>_chunks.json
+data_pipeline/books/processed_books_chunks/<book_name>_chunks.json
 ```
 
 ## Indexing Plan
@@ -473,15 +500,18 @@ Unit tests:
 4. `char_to_time_map` generation preserves absolute character offsets.
 5. Timestamp interpolation returns expected values for synthetic fragments.
 6. Exact text lookup resolves direct matches and punctuation-normalized fallback matches.
-7. Idempotency checks skip existing output files.
-8. Empty transcript and empty PDF inputs are skipped without LLM calls.
-9. Smart sampling returns first, middle, and final text sections with separators.
-10. Book chunk page mapping resolves correct start and end pages.
+7. Key lessons from mocked LLM metadata resolve start and end timestamps through the shared video timestamp resolver.
+8. Missing or malformed key lesson anchors are logged and handled without crashing the batch.
+9. Duplicate or unsupported key lessons are filtered or rejected according to prompt and validation rules.
+10. Idempotency checks skip existing output files.
+11. Empty transcript and empty PDF inputs are skipped without LLM calls.
+12. Smart sampling returns first, middle, and final text sections with separators.
+13. Book chunk page mapping resolves correct start and end pages.
 
 Integration tests:
 
 1. Mock transcript ingestion produces `output/<video_id>.json`.
-2. Mock video LLM response produces enriched metadata with resolved story and music timestamps.
+2. Mock video LLM response produces enriched metadata with resolved story, key lesson, and music timestamps.
 3. Mock video chunking produces chunks with stable `start_time`.
 4. Sample PDF or mocked page JSON produces page-based book chunks.
 5. Full local dry run processes multiple videos and books while skipping already-generated artifacts.
@@ -493,7 +523,7 @@ The implementation is complete when:
 1. Running the video pipeline creates raw transcript, enriched metadata, and processed chunk JSON files.
 2. Running the book pipeline creates page extraction, enriched metadata, and processed chunk JSON files.
 3. Re-running either pipeline skips existing outputs without repeating expensive work.
-4. Video chunks and LLM-extracted story/music segments resolve to source timestamps through character-offset interpolation.
+4. Video chunks and LLM-extracted story, key lesson, and music segments resolve to source timestamps through character-offset interpolation.
 5. Book chunks resolve to page numbers through character-offset mapping.
 6. Invalid or noisy LLM JSON is handled by the brace-counting parser.
 7. Empty inputs, rate limits, quota errors, and missing transcripts are logged and handled gracefully.
@@ -504,7 +534,7 @@ The implementation is complete when:
 1. Create shared utilities for logging, retries, JSON parsing, LLM access, and text splitting.
 2. Build video transcript ingestion and validate raw transcript output.
 3. Implement video character-to-time mapping and timestamp resolver with tests.
-4. Implement video LLM enrichment and story/music timestamp resolution.
+4. Implement video LLM enrichment and story/key lesson/music timestamp resolution.
 5. Implement video semantic chunking using LangChain start indexes.
 6. Build book PDF extraction and validate page-level output.
 7. Implement book smart sampling and LLM enrichment.
@@ -522,7 +552,7 @@ metadata/vectors to DynamoDB and Qdrant.
 ## What This Builds
 
 - YouTube transcripts in `data_pipeline/videos/output/`
-- Video LLM metadata in `data_pipeline/videos/enriched_metadata/`
+- Video LLM metadata, including transcript-supported key lessons, in `data_pipeline/videos/enriched_metadata/`
 - Zero-drift timestamped video chunks in `data_pipeline/videos/processed_chunks/`
 - PDF page text in `data_pipeline/books/books_output/`
 - Book LLM metadata in `data_pipeline/books/books_enriched_metadata/`
@@ -665,5 +695,5 @@ This prevents duplicate LLM calls and makes reruns safe.
 ## Notes
 
 - Video timestamp mapping is character-offset based and uses interpolation inside
-  transcript fragments for zero-drift chunk/story timestamps.
+  transcript fragments for zero-drift chunk/story/key lesson timestamps.
 - Book chunking maps character offsets back to source page numbers.

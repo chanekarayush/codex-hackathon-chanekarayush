@@ -10,7 +10,7 @@ if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from data_pipeline.common import ensure_dir, get_logger
-from data_pipeline.videos.manager import TranscriptManager
+from data_pipeline.videos.manager import TranscriptIngestionBlocked, TranscriptManager
 
 
 LOGGER = get_logger(__name__)
@@ -44,6 +44,14 @@ def ingest_urls(
             )
             if saved_path:
                 saved_paths.append(saved_path)
+        except TranscriptIngestionBlocked as exc:
+            LOGGER.warning(
+                "Stopping remaining transcript extraction after YouTube block for %s: %s. "
+                "Continuing with already extracted transcripts.",
+                url,
+                exc,
+            )
+            break
         except Exception as exc:
             LOGGER.exception("Failed to ingest %s: %s", url, exc)
 

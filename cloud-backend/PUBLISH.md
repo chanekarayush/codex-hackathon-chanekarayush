@@ -109,6 +109,7 @@ From the repo root:
 
 ```bash
 cd cloud-backend
+make check-aws
 make validate
 make build
 make deploy
@@ -192,3 +193,105 @@ PUT /admin/videos/{videoId}
 ```
 
 All Lambda responses include CORS headers for browser clients.
+
+## Troubleshooting
+
+### AWS CLI Crashes With pyexpat/libexpat
+
+If `aws sts get-caller-identity` fails before contacting AWS with an error like:
+
+```text
+dlopen(.../pyexpat.cpython-314-darwin.so...)
+Symbol not found: _XML_SetAllocTrackerActivationThreshold
+Expected in: /usr/lib/libexpat.1.dylib
+```
+
+your local AWS CLI install is broken. This usually happens when Homebrew's
+`awscli` is using a Python/expat combination that is loading macOS's older
+system `libexpat`.
+
+This project's Makefile applies the Homebrew expat workaround automatically for
+Make targets:
+
+```makefile
+export DYLD_LIBRARY_PATH := /opt/homebrew/lib:<homebrew-expat-lib>:$(DYLD_LIBRARY_PATH)
+```
+
+It also prefixes every `aws` and `sam` invocation with that same
+`DYLD_LIBRARY_PATH`, including `make check-aws`, `make refresh`, and
+`make release`.
+
+So prefer:
+
+```bash
+cd cloud-backend
+make check-aws
+make refresh
+```
+
+If you run `aws ...` directly outside Make, your shell must export the same
+library path:
+
+```bash
+export DYLD_LIBRARY_PATH="/opt/homebrew/lib:$(brew --prefix expat)/lib:$DYLD_LIBRARY_PATH"
+aws sts get-caller-identity --region us-east-1
+```
+
+Recommended fix on macOS:
+
+```bash
+brew uninstall awscli
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o /tmp/AWSCLIV2.pkg
+sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
+hash -r
+which aws
+aws --version
+aws sts get-caller-identity --region us-east-1
+```
+
+Alternative Homebrew repair:
+
+```bash
+brew update
+brew reinstall expat python@3.14 awscli
+hash -r
+aws --version
+aws sts get-caller-identity --region us-east-1
+```
+
+Only continue with `make release` or `make refresh` after the plain
+`aws sts get-caller-identity` command works.
+
+### Could Not Connect To CloudFormation Endpoint
+
+If deploy fails with:
+
+```text
+Could not connect to the endpoint URL: "https://cloudformation.<region>.amazonaws.com/"
+```
+
+the SAM template is not the problem. Your local machine cannot reach the AWS
+CloudFormation endpoint for that region, or the AWS CLI is being blocked before
+it reaches AWS.
+
+Run:
+
+```bash
+cd cloud-backend
+make check-aws
+aws sts get-caller-identity --region us-east-1
+aws cloudformation list-stacks --region us-east-1 --max-items 1
+```
+
+Then check:
+
+- Internet connectivity.
+- VPN or corporate firewall rules.
+- Proxy variables such as `HTTPS_PROXY`, `HTTP_PROXY`, and `NO_PROXY`.
+- AWS CLI credentials from `aws configure`.
+- `AWS_REGION` in `../.env`.
+- Whether the same region works in the AWS Console.
+
+The Makefile intentionally hides secret-bearing `sam deploy` commands from
+terminal echo, but avoid pasting terminal output that contains API keys. Rotate
+any Qdrant or Hugging Face keys that were exposed in logs or chat.

@@ -19,6 +19,29 @@ from data_pipeline.common import (
 LOGGER = get_logger(__name__)
 
 
+class TranscriptIngestionBlocked(RuntimeError):
+    """Raised when YouTube blocks transcript requests for the current IP/session."""
+
+
+def is_youtube_block_error(error: BaseException) -> bool:
+    """Best-effort detection for youtube-transcript-api request/IP blocks."""
+
+    error_type = type(error).__name__.lower()
+    message = str(error).lower()
+    needles = (
+        "requestblocked",
+        "ipblocked",
+        "request blocked",
+        "ip blocked",
+        "ip has been blocked",
+        "blocking requests from your ip",
+        "cloud provider",
+        "too many requests",
+        "working around ip bans",
+    )
+    return any(needle in error_type or needle in message for needle in needles)
+
+
 class TranscriptManager:
     """Fetch transcripts from YouTube and normalize them for downstream stages."""
 
@@ -70,7 +93,20 @@ class TranscriptManager:
                 api = YouTubeTranscriptApi()
                 return api.fetch(video_id, languages=preferred_languages)
             except AttributeError:
-                return YouTubeTranscriptApi.get_transcript(video_id, languages=preferred_languages)
+                try:
+                    return YouTubeTranscriptApi.get_transcript(video_id, languages=preferred_languages)
+                except Exception as exc:
+                    if is_youtube_block_error(exc):
+                        raise TranscriptIngestionBlocked(
+                            f"YouTube blocked transcript requests while fetching {video_id}."
+                        ) from exc
+                    raise
+            except Exception as exc:
+                if is_youtube_block_error(exc):
+                    raise TranscriptIngestionBlocked(
+                        f"YouTube blocked transcript requests while fetching {video_id}."
+                    ) from exc
+                raise
 
         fetched = call_with_backoff(_fetch, logger=LOGGER)
         return self._normalize_transcript(fetched)

@@ -7,6 +7,7 @@ import logging
 import math
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from collections import Counter
@@ -51,11 +52,10 @@ def _tokenize(text: str, *, remove_stopwords: bool = True) -> list[str]:
 
 
 def _should_skip_sparse(raw_query: str) -> bool:
-    raw_words = _tokenize(raw_query, remove_stopwords=False)
     content_words = _tokenize(raw_query, remove_stopwords=True)
     if not content_words:
         return True
-    return len(raw_words) > 10 or len(content_words) > 6
+    return len(content_words) > 12
 
 
 def _build_sparse_query(query: str) -> models.SparseVector | None:
@@ -114,12 +114,25 @@ def _extract_embedding(payload: Any) -> list[float]:
     raise RuntimeError("Unexpected embedding response shape from Hugging Face.")
 
 
-def _dense_embedding(query: str) -> list[float]:
-    hf_api_key = os.environ.get("HF_API_KEY")
-    if not hf_api_key:
-        raise RuntimeError("HF_API_KEY is required for dense query embeddings.")
+def _hf_max_attempts() -> int:
+    try:
+        return max(1, min(int(os.environ.get("HF_MAX_ATTEMPTS", "2")), 4))
+    except ValueError:
+        return 2
 
-    model_name = os.environ.get("HF_EMBEDDING_MODEL", "BAAI/bge-m3")
+
+def _hf_timeout_seconds() -> float:
+    try:
+        return max(3.0, min(float(os.environ.get("HF_TIMEOUT_SECONDS", "8")), 20.0))
+    except ValueError:
+        return 8.0
+
+
+def _hf_backoff(attempt: int) -> float:
+    return min(0.75 * (2**attempt), 6.0)
+
+
+def _read_hf_embedding_payload(query: str, model_name: str, hf_api_key: str) -> Any:
     url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/{model_name}"
     request = urllib.request.Request(
         url,
@@ -130,12 +143,41 @@ def _dense_embedding(query: str) -> list[float]:
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(request, timeout=20) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        details = exc.read().decode("utf-8", errors="ignore")
-        raise RuntimeError(f"Hugging Face embedding request failed: {exc.code} {details}") from exc
+    with urllib.request.urlopen(request, timeout=_hf_timeout_seconds()) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _dense_embedding(query: str) -> list[float]:
+    hf_api_key = os.environ.get("HF_API_KEY")
+    if not hf_api_key:
+        raise RuntimeError("HF_API_KEY is required for dense query embeddings.")
+
+    model_name = os.environ.get("HF_EMBEDDING_MODEL", "BAAI/bge-m3")
+    payload: Any = None
+    last_error: Exception | None = None
+    retryable_http_statuses = {408, 409, 425, 429, 500, 502, 503, 504}
+
+    for attempt in range(_hf_max_attempts()):
+        try:
+            payload = _read_hf_embedding_payload(query, model_name, hf_api_key)
+            last_error = None
+            break
+        except urllib.error.HTTPError as exc:
+            details = exc.read().decode("utf-8", errors="ignore")
+            last_error = RuntimeError(f"Hugging Face embedding request failed: {exc.code} {details}")
+            if exc.code not in retryable_http_statuses or attempt >= _hf_max_attempts() - 1:
+                raise last_error from exc
+        except (TimeoutError, urllib.error.URLError, OSError) as exc:
+            last_error = RuntimeError(f"Hugging Face embedding request failed: {exc}")
+            if attempt >= _hf_max_attempts() - 1:
+                raise last_error from exc
+
+        time.sleep(_hf_backoff(attempt))
+
+    if last_error:
+        raise last_error
+    if payload is None:
+        raise RuntimeError("Hugging Face embedding request returned no payload.")
 
     vector = _extract_embedding(payload)
     norm = math.sqrt(sum(value * value for value in vector))
@@ -253,10 +295,24 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
         collection_name = os.environ.get("COLLECTION_NAME", "codex_project-videos")
 
         client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key, timeout=20)
-        dense_vector = _dense_embedding(query)
         sparse_vector = None if _should_skip_sparse(query) else _build_sparse_query(query)
+        dense_vector: list[float] | None = None
+        dense_error: str | None = None
 
-        if sparse_vector:
+        try:
+            dense_vector = _dense_embedding(query)
+        except Exception as exc:
+            dense_error = str(exc)
+            logger.warning("Dense embedding failed; sparse fallback available=%s", bool(sparse_vector), exc_info=True)
+
+        if dense_vector is None and sparse_vector is None:
+            return error_response(
+                "Search embedding failed and no sparse fallback was available. "
+                "Try a shorter keyword-style query or check HF_API_KEY/Hugging Face availability.",
+                503,
+            )
+
+        if dense_vector and sparse_vector:
             threshold = 0.01
             result = client.query_points(
                 collection_name=collection_name,
@@ -269,6 +325,16 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 score_threshold=threshold,
             )
             mode = "hybrid_rrf"
+        elif sparse_vector:
+            threshold = 0.01
+            result = client.query_points(
+                collection_name=collection_name,
+                query=sparse_vector,
+                using="sparse",
+                limit=limit,
+                score_threshold=threshold,
+            )
+            mode = "sparse"
         else:
             threshold = 0.46
             result = client.query_points(
@@ -293,6 +359,7 @@ def lambda_handler(event: dict[str, Any], _context: Any) -> dict[str, Any]:
                 "count": len(hits),
                 "results": hits,
                 "related_queries": _related_queries(query, metadata_lookup),
+                "warning": f"Dense embedding failed; used sparse search. {dense_error}" if mode == "sparse" and dense_error else None,
             },
         )
     except Exception as exc:

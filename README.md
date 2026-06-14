@@ -28,17 +28,16 @@ The pipeline extracts raw source text, enriches it with an LLM, creates anchored
 
 ## Technology Stack
 
-This project uses the following technologies:
-
-- **Transcription:** OpenAI Whisper library via `youtube-transcript-api`
-- **LLM Enrichment:** OpenAI GPT API (gpt-4o-mini by default) for metadata extraction
-- **Embeddings:** Hugging Face BGE-M3 model via `sentence-transformers` library
-- **Vector Database:** Qdrant for hybrid semantic search
-- **Backend:** AWS SAM (Lambda, DynamoDB, S3, CloudFront)
-- **Frontend:** ReactJS with Vite
-- **Data Processing:** Python with LangChain, PyMuPDF, pytesseract, Pillow
-- **Document Processing:** PyMuPDF for PDF extraction, pytesseract for OCR
-- **GPU Compute:** Google Colab (T4 GPU for acceleration)
+![Python](https://img.shields.io/badge/Python-3.8+-3776ab?style=plastic&logo=python&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-Whisper%20%26%20GPT-412991?style=plastic&logo=openai&logoColor=white)
+![Hugging Face](https://img.shields.io/badge/Hugging%20Face-BGE--M3-FFD21E?style=plastic&logo=huggingface&logoColor=white)
+![Qdrant](https://img.shields.io/badge/Qdrant-Vector%20DB-4000FF?style=plastic&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCAxOEM1NS42IDExOSAxOCA5NSAxOCAxNDZDMTggMTY5LjkgMzYuMSAxODkgNTkgMTg5Qzg0LjkgMTg5IDEwNiAxNzAuMSAxMDYgMTQ2VjE4WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC44Ii8+PC9zdmc+&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-Lambda%20%26%20DynamoDB-FF9900?style=plastic&logo=amazon-aws&logoColor=white)
+![React](https://img.shields.io/badge/React-Vite-61dafb?style=plastic&logo=react&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-Data%20Processing-121212?style=plastic&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwMCAxMEMxMjA3IDEwIDE0MCAxMzAgMTQwIDEwMENMNjAgMTAwQzYwIDEzMCA0MCAxNDAgMjAgMTQwQzAgMTQwIDAgMTIwIDAgMTAwQzAgMzAgNDAgMTAgMTAwIDEwWiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC44Ii8+PC9zdmc+&logoColor=white)
+![PyMuPDF](https://img.shields.io/badge/PyMuPDF-PDF%20Processing-red?style=plastic&logoColor=white)
+![Tesseract](https://img.shields.io/badge/Tesseract-OCR-00838f?style=plastic&logoColor=white)
+![Google Colab](https://img.shields.io/badge/Google%20Colab-T4%20GPU-F9AB00?style=plastic&logo=google-colab&logoColor=white)
 
 > **Important:** Google Colab is used **solely for fast T4 GPU compute availability**. The pipeline itself has **NO Colab-specific dependencies** and can run on any system with GPU support (local GPU, cloud GPU instances, AWS SageMaker, etc.).
 

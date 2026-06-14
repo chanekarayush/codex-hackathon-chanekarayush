@@ -4,7 +4,7 @@
 
 **Find the right moment. Save hours. AI-powered semantic search across YouTube videos and PDF books.**
 
-Multimodal motivation and fitness search data pipeline for YouTube videos and PDF books.
+Multimodal LLM Agent driven, semantic search data pipeline for YouTube videos and PDF books.
 
 The pipeline extracts raw source text, enriches it with an LLM, creates anchored semantic chunks, generates BGE-M3 embeddings on GPU, and can upload metadata/vectors to DynamoDB and Qdrant.
 

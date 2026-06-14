@@ -551,18 +551,10 @@ Use this notebook:
 
 ### Required Colab Secrets
 
-For Gemini enrichment:
+For OpenAI enrichment:
 
 ```text
-GEMINI_API_KEY
-```
-
-For OpenAI enrichment instead:
-
-```text
-DITTO_LLM_PROVIDER  value: openai
 OPENAI_API_KEY
-DITTO_LLM_MODEL=gpt-4o-mini
 ```
 
 For cloning a private repo:
@@ -593,8 +585,9 @@ Optional overrides:
 ```text
 GITHUB_REPO_URL
 GITHUB_BRANCH
-DITTO_LLM_PROVIDER
 DITTO_LLM_MODEL
+DITTO_LLM_TEMPERATURE
+DITTO_LLM_MAX_ATTEMPTS
 DITTO_VIDEO_SEGMENTS_TABLE
 VIDEO_QDRANT_COLLECTION
 BOOK_QDRANT_COLLECTION
